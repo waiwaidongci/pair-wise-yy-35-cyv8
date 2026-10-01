@@ -84,6 +84,11 @@ def make_handler(service: Service, static_dir: str):
                     actor, role = self._identity()
                     del actor
                     self._json(200, {"items": service.list_items(role)})
+                elif path.startswith("/api/items/") and path.endswith("/investigation"):
+                    item_id = int(path.split("/")[3])
+                    actor, role = self._identity()
+                    del actor
+                    self._json(200, service.investigation_task(item_id, role))
                 elif path.startswith("/api/items/") and path.endswith("/records"):
                     item_id = int(path.split("/")[3])
                     actor, role = self._identity()
@@ -110,6 +115,13 @@ def make_handler(service: Service, static_dir: str):
                 body = self._body()
                 if path == "/api/items":
                     self._json(201, service.create_item(body, actor, role))
+                elif path.startswith("/api/items/") and path.endswith("/investigation/claim"):
+                    item_id = int(path.split("/")[3])
+                    self._json(200, service.claim_investigation(item_id, body, actor, role))
+                elif path.startswith("/api/items/") and path.endswith("/investigation/checkpoint"):
+                    item_id = int(path.split("/")[3])
+                    self._json(200, service.investigation_checkpoint(
+                        item_id, body, actor, role))
                 elif path.startswith("/api/items/") and path.endswith("/records"):
                     item_id = int(path.split("/")[3])
                     self._json(201, service.add_record(item_id, body, actor, role))

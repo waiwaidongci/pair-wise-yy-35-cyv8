@@ -30,9 +30,24 @@ python3 app.py --db ./data.db --port 8312
 - `GET /api/items/{id}`
 - `POST /api/items/{id}/records`
 - `POST /api/items/{id}/transition`，必须提交`expected_version`
+- `POST /api/items/{id}/investigation/claim`，接办调查任务（仅`radiation_officer`）
+- `POST /api/items/{id}/investigation/checkpoint`，写入处理断点并续租（仅当前接办人）
+- `GET /api/items/{id}/investigation`，查看接办任务状态
 - `GET /api/audit`
 
 允许角色：dosimetrist, radiation_officer, health_physicist, viewer。剂量与调查水平之比决定升级程度，超过阈值必须进入调查；更正剂量不能覆盖已确认审计记录。
+
+## 调查接办任务
+
+事件进入`investigation`后以"接办任务"方式处理，同一事件至多有一个有效任务（数据库部分唯一索引保证）：
+
+- 接办时固化**证据摘要**（标题、严重程度、剂量/阈值、未关闭记录数、最近记录）与**事件版本**`item_version`。
+- 任务带租约（`lease_seconds`，默认900秒，范围30–86400）；租约超时任务自动回到`pending`，下一人接办沿用**同一任务**并从断点继续，`attempts`递增。
+- 同一处理人重复接办返回首次任务（`outcome=reused`）并续租；他人在租约有效期内接办返回409。
+- 处理人通过`checkpoint`（`step`/`note`）记录处理断点并续租；租约超时或事件版本变化后旧租约的迟到写入返回409。
+- 事件改动（版本递增）后旧任务置为`stale`，新接办生成后继任务（`supersedes_task_id`指向旧任务、`outcome=succeeded`）并继承断点；事件转出调查时任务置为`completed`。
+- 接办与断点接口仅`radiation_officer`（辐射防护员）可用，其他角色返回403。
+- 调查中事件的`GET /api/items/{id}`响应附带`investigation_task`摘要（当前处理人、断点、租约是否有效）。
 
 ## 测试
 

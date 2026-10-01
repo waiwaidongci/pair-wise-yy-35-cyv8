@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def lease_expiry(now: str, lease_seconds: int) -> str:
+    instant = datetime.fromisoformat(now)
+    return (instant + timedelta(seconds=int(lease_seconds))).isoformat()
 
 
 def calculate_hash(previous_hash: str, payload: dict) -> str:

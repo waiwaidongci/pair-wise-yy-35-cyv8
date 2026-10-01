@@ -4,6 +4,11 @@ TITLE='职业辐射剂量与异常事件'; ENTITY='剂量事件'; ID_PREFIX='RD'
 SEVERITIES=['low', 'elevated', 'high', 'critical']; STATES=['recorded', 'reviewing', 'investigation', 'follow_up', 'closed']; TRANSITIONS={'recorded': ['reviewing'], 'reviewing': ['investigation'], 'investigation': ['follow_up'], 'follow_up': ['closed'], 'closed': []}; TRANSITION_ROLES={'reviewing': ['radiation_officer'], 'investigation': ['radiation_officer'], 'follow_up': ['health_physicist'], 'closed': ['health_physicist']}
 CREATE_ROLES=set(['dosimetrist']); RECORD_ROLES=set(['radiation_officer', 'health_physicist']); AUDIT_ROLES=set(['health_physicist', 'viewer']); VIEW_ROLES=set(['dosimetrist', 'radiation_officer', 'health_physicist', 'viewer'])
 SEVERITY_WEIGHT={'low': 1.0, 'elevated': 3.0, 'high': 6.0, 'critical': 9.0}; DEADLINE_HOURS={'low': 72, 'elevated': 24, 'high': 8, 'critical': 4}; TERMINAL_STATES=set(['closed'])
+# 调查接办任务：pending=待接办, leased=已接办（持有效租约）, stale=事件改动后失效, completed=随调查结束完成
+TASK_STATES=['pending','leased','stale','completed']; ACTIVE_TASK_STATES=set(['pending','leased'])
+CLAIM_ROLES=set(['radiation_officer']); INVESTIGATION_STATE='investigation'
+DEFAULT_LEASE_SECONDS=900; MIN_LEASE_SECONDS=30; MAX_LEASE_SECONDS=24*3600
+EVIDENCE_SUMMARY_LIMIT=20
 def priority_score(severity,quantity=0.0,threshold=1.0,open_records=0):
     if severity not in SEVERITY_WEIGHT: raise ValidationError("unknown severity")
     ratio=quantity/threshold if threshold>0 else 1.0
